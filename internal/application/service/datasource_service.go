@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"mime"
 	"mime/multipart"
 	"net/textproto"
 	"reflect"
@@ -68,6 +69,9 @@ func NewDataSourceService(
 func (s *DataSourceService) CreateDataSource(ctx context.Context, ds *types.DataSource) (*types.DataSource, error) {
 	if ds == nil {
 		return nil, datasource.ErrDataSourceInvalid
+	}
+	if err := validateManualDataSource(ds); err != nil {
+		return nil, err
 	}
 	if err := datasource.ValidateSyncSchedule(ds.SyncSchedule); err != nil {
 		return nil, err
@@ -159,6 +163,10 @@ func (s *DataSourceService) UpdateDataSource(ctx context.Context, ds *types.Data
 		return nil, err
 	}
 
+	if ds.SyncMode != existing.SyncMode && (ds.SyncMode == types.SyncModeManual || existing.SyncMode == types.SyncModeManual) {
+		return nil, fmt.Errorf("manual connections cannot be converted to or from sync sources")
+	}
+
 	if ds.KnowledgeBaseID == "" {
 		ds.KnowledgeBaseID = existing.KnowledgeBaseID
 	}
@@ -171,6 +179,9 @@ func (s *DataSourceService) UpdateDataSource(ctx context.Context, ds *types.Data
 	}
 	if ds.TenantID != existing.TenantID {
 		return nil, datasource.ErrDataSourceInvalid
+	}
+	if err := validateManualDataSource(ds); err != nil {
+		return nil, err
 	}
 	if err := datasource.ValidateSyncSchedule(ds.SyncSchedule); err != nil {
 		return nil, err
@@ -464,6 +475,9 @@ func (s *DataSourceService) ManualSync(ctx context.Context, dsID string) (*types
 	if err != nil {
 		return nil, err
 	}
+	if ds.SyncMode == types.SyncModeManual {
+		return nil, fmt.Errorf("manual connections do not support sync")
+	}
 
 	if ds.Status != types.DataSourceStatusActive &&
 		ds.Status != types.DataSourceStatusError &&
@@ -555,6 +569,9 @@ func (s *DataSourceService) ResumeDataSource(ctx context.Context, id string) err
 	if err != nil {
 		return err
 	}
+	if ds.SyncMode == types.SyncModeManual {
+		return fmt.Errorf("manual connections do not support sync")
+	}
 	if err := datasource.ValidateSyncSchedule(ds.SyncSchedule); err != nil {
 		return err
 	}
@@ -626,6 +643,13 @@ func (s *DataSourceService) ProcessSync(ctx context.Context, task *asynq.Task) e
 	if err != nil {
 		logger.Errorf(ctx, "failed to get sync log: %v", err)
 		return nil
+	}
+
+	if ds.SyncMode == types.SyncModeManual {
+		syncLog.Status = types.SyncLogStatusCanceled
+		syncLog.FinishedAt = timePtr(time.Now().UTC())
+		syncLog.ErrorMessage = "manual connections do not support sync"
+		return s.syncLogRepo.Update(ctx, syncLog)
 	}
 
 	kb, kbErr := s.kbService.GetKnowledgeBaseByID(ctx, ds.KnowledgeBaseID)
@@ -1504,7 +1528,7 @@ func bytesToFileHeader(data []byte, filename string) (*multipart.FileHeader, err
 
 	// Create a form file part
 	partHeader := make(textproto.MIMEHeader)
-	partHeader.Set("Content-Disposition", fmt.Sprintf(`form-data; name="file"; filename="%s"`, filename))
+	partHeader.Set("Content-Disposition", mime.FormatMediaType("form-data", map[string]string{"name": "file", "filename": filename}))
 	partHeader.Set("Content-Type", "application/octet-stream")
 
 	part, err := writer.CreatePart(partHeader)

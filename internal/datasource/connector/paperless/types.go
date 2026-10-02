@@ -38,8 +38,14 @@ func (t *paperlessTime) UnmarshalJSON(data []byte) error {
 }
 
 type listResponse[T any] struct {
+	Count   int    `json:"count"`
 	Next    string `json:"next"`
 	Results []T    `json:"results"`
+}
+
+type tag struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }
 
 type correspondent struct {
@@ -67,6 +73,7 @@ type document struct {
 	ID               int                `json:"id"`
 	Title            string             `json:"title"`
 	Content          string             `json:"content"`
+	Tags             []int              `json:"tags"`
 	Created          paperlessTime      `json:"created"`
 	Added            paperlessTime      `json:"added"`
 	Modified         paperlessTime      `json:"modified"`

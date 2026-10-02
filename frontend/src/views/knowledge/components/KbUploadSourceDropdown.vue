@@ -76,6 +76,7 @@ const props = withDefaults(defineProps<{
   acceptFileTypes?: string
   supportedFileTypes?: string[]
   includeManual?: boolean
+  includePaperless?: boolean
   triggerIcon?: string
   triggerLabel?: string
   triggerClass?: string
@@ -86,6 +87,7 @@ const props = withDefaults(defineProps<{
   acceptFileTypes: '',
   supportedFileTypes: () => [],
   includeManual: false,
+  includePaperless: false,
   triggerIcon: 'file-add',
   triggerClass: '',
   dataGuide: '',
@@ -97,6 +99,7 @@ const emit = defineEmits<{
   files: [files: File[]]
   url: [url: string]
   manual: []
+  paperless: []
 }>()
 
 const { t } = useI18n()
@@ -141,6 +144,7 @@ const dropdownOptions = computed(() => {
       prefixIcon: () => h(EditIcon, sourceIconProps),
     })
   }
+  if (props.includePaperless) options.push({ content: t('datasource.paperless.importMenu'), value: 'paperless', prefixIcon: () => h(FileAddIcon, sourceIconProps) })
   return options
 })
 
@@ -158,6 +162,9 @@ const handleActionSelect = (data: { value: string }) => {
       break
     case 'manualCreate':
       emit('manual')
+      break
+    case 'paperless':
+      emit('paperless')
       break
     default:
       break

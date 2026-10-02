@@ -76,7 +76,7 @@ func (s *Scheduler) Start(ctx context.Context) error {
 	}
 
 	for _, ds := range dataSources {
-		if ds.SyncSchedule == "" {
+		if ds.SyncMode == types.SyncModeManual || ds.SyncSchedule == "" {
 			continue
 		}
 		if err := s.addEntry(ds); err != nil {
@@ -113,7 +113,7 @@ func (s *Scheduler) AddOrUpdate(ds *types.DataSource) error {
 		delete(s.entries, ds.ID)
 	}
 
-	if ds.Status != types.DataSourceStatusActive || ds.SyncSchedule == "" {
+	if ds.SyncMode == types.SyncModeManual || ds.Status != types.DataSourceStatusActive || ds.SyncSchedule == "" {
 		return nil
 	}
 
@@ -138,6 +138,9 @@ func (s *Scheduler) addEntry(ds *types.DataSource) error {
 }
 
 func (s *Scheduler) addEntryLocked(ds *types.DataSource) error {
+	if ds.SyncMode == types.SyncModeManual {
+		return nil
+	}
 	dsID := ds.ID
 	tenantID := ds.TenantID
 
@@ -164,7 +167,7 @@ func (s *Scheduler) triggerSync(dataSourceID string, tenantID uint64) {
 	ctx := context.Background()
 
 	ds, err := s.dsRepo.FindByID(ctx, dataSourceID)
-	if err != nil || ds == nil || ds.Status != types.DataSourceStatusActive {
+	if err != nil || ds == nil || ds.Status != types.DataSourceStatusActive || ds.SyncMode == types.SyncModeManual {
 		logger.Infof(ctx, "[Scheduler] skipping sync for ds=%s (not active or not found)", dataSourceID)
 		return
 	}
