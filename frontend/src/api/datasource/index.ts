@@ -10,7 +10,7 @@ export interface DataSource {
   type: string
   config: any
   sync_schedule: string
-  sync_mode: 'incremental' | 'full'
+  sync_mode: 'incremental' | 'full' | 'manual'
   status: 'active' | 'paused' | 'error'
   conflict_strategy: 'overwrite' | 'skip'
   sync_deletions: boolean
@@ -174,4 +174,22 @@ export async function putDataSourceCredentials(
 
 export async function deleteDataSourceCredentials(id: string): Promise<void> {
   await del(`/api/v1/datasource/${id}/credentials/credentials`)
+}
+
+export interface PaperlessFacet { id: number; name: string }
+export interface PaperlessDocument { id: number; title: string; original_file_name: string }
+export interface PaperlessDocumentPage { count: number; results: PaperlessDocument[]; page: number; page_size: number; has_next: boolean }
+export interface PaperlessImportResult { document_id: number; knowledge_id?: string; duplicate?: boolean; error?: string }
+export function getPaperlessFacets(id: string) { return get(`/api/v1/datasource/${id}/paperless/facets`) }
+export function listPaperlessDocuments(id: string, params: { query?: string; tags?: number[]; document_type?: number; correspondent?: number; page: number; page_size: number }) {
+  const query = new URLSearchParams()
+  if (params.query) query.set('query', params.query)
+  if (params.tags?.length) query.set('tags', params.tags.join(','))
+  if (params.document_type !== undefined) query.set('document_type', String(params.document_type))
+  if (params.correspondent !== undefined) query.set('correspondent', String(params.correspondent))
+  query.set('page', String(params.page)); query.set('page_size', String(params.page_size))
+  return get(`/api/v1/datasource/${id}/paperless/documents?${query}`)
+}
+export function importPaperlessDocuments(id: string, documentIds: number[], folderPath?: string) {
+  return post(`/api/v1/datasource/${id}/paperless/import`, { document_ids: documentIds, ...(folderPath ? { folder_path: folderPath } : {}) })
 }

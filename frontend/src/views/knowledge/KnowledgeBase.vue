@@ -48,6 +48,7 @@ import DocumentListView from './components/DocumentListView.vue';
 import DocumentCardView from './components/DocumentCardView.vue';
 import DocumentBatchBar from './components/DocumentBatchBar.vue';
 import KbUploadSourceDropdown from './components/KbUploadSourceDropdown.vue';
+import PaperlessImportDialog from './components/PaperlessImportDialog.vue';
 import KbFolderTree from './components/KbFolderTree.vue';
 import BatchTagDialog from './components/BatchTagDialog.vue';
 import type { KnowledgeProcessOverrides } from '@/types/knowledgeProcess';
@@ -88,6 +89,8 @@ const { t } = useI18n();
 const kbId = computed(() => (route.params as any).kbId as string || '');
 const kbInfo = ref<any>(null);
 const uploadSourceRef = ref<InstanceType<typeof KbUploadSourceDropdown> | null>(null);
+const paperlessImportVisible = ref(false);
+const notifyPaperlessImported = () => window.dispatchEvent(new CustomEvent('knowledgeFileUploaded', { detail: { kbId: kbId.value } }));
 const kbLoading = ref(false);
 const docListLoading = ref(true);
 const isFAQ = computed(() => (kbInfo.value?.type || '') === 'faq');
@@ -2490,10 +2493,10 @@ const handleKBEditorSuccess = (kbIdValue: string) => {
                   </div>
                   <div v-if="canEdit" class="doc-filter-actions">
                     <KbUploadSourceDropdown ref="uploadSourceRef" :accept-file-types="acceptFileTypes"
-                      :supported-file-types="[...supportedFileTypes]" include-manual trigger-icon="add" :trigger-label="t('knowledgeBase.addDocument')"
+                      :supported-file-types="[...supportedFileTypes]" include-manual :include-paperless="authStore.hasRole('admin') && !isViaShare && String(kbInfo?.tenant_id) === String(authStore.currentTenantId)" trigger-icon="add" :trigger-label="t('knowledgeBase.addDocument')"
                       trigger-class="content-bar-icon-btn" data-guide="kb-detail-add-doc"
                       :tooltip="t('knowledgeBase.addDocument')" placement="bottom-right" @files="handleUploadSourceFiles"
-                      @url="handleUploadSourceUrl" @manual="handleManualCreate" />
+                      @url="handleUploadSourceUrl" @manual="handleManualCreate" @paperless="paperlessImportVisible = true" />
                   </div>
                 </div>
               </div>
@@ -2606,6 +2609,8 @@ const handleKBEditorSuccess = (kbIdValue: string) => {
           </div>
         </div>
       </template>
+      <PaperlessImportDialog v-model:visible="paperlessImportVisible" :kb-id="kbId" :folder-path="selectedFolderPath"
+        @imported="notifyPaperlessImported" />
 
       <!-- DocContent drawer (shared by documents tab and wiki source refs) -->
       <DocContent ref="docContentRef" :visible="isCardDetails" :details="details" :canEditKB="canEdit"

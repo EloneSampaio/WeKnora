@@ -344,3 +344,16 @@ func RegisterWeKnoraCloudRoutes(r *gin.RouterGroup, handler *handler.WeKnoraClou
 	g.apiKeyRoute(r, http.MethodPost, "/weknoracloud/credentials", apiKeyManageModels(apiKeyFullAccess()), g.Admin(), handler.SaveCredentials)
 	g.apiKeyRoute(r, http.MethodGet, "/models/weknoracloud/status", apiKeyManageModels(apiKeyFullAccess()), g.Viewer(), handler.Status)
 }
+
+// RegisterPaperlessManualRoutes uses the same credential/RBAC boundary as sync.
+// Import additionally checks the ingest capability in the service, since the
+// route registry's additive capability policy is any-of rather than all-of.
+func RegisterPaperlessManualRoutes(r *gin.RouterGroup, h *handler.PaperlessManualHandler, g *rbacGuards) {
+	if h == nil {
+		return
+	}
+	routes := g.apiKeyGroup(r.Group("/datasource/:id/paperless"), apiKeyManageDataSources(apiKeyFullAccess()))
+	routes.GET("/facets", g.Admin(), h.Facets)
+	routes.GET("/documents", g.Admin(), h.Documents)
+	routes.POST("/import", g.Admin(), h.Import)
+}

@@ -200,7 +200,7 @@ const form = ref({
     settings: {} as Record<string, any>,
   },
   sync_schedule: '0 0 */6 * * *',
-  sync_mode: 'incremental' as 'incremental' | 'full',
+  sync_mode: 'incremental' as 'incremental' | 'full' | 'manual',
   conflict_strategy: 'overwrite' as 'overwrite' | 'skip',
   sync_deletions: true,
 })

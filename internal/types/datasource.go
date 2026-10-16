@@ -43,6 +43,8 @@ const (
 	// Sync modes
 	SyncModeIncremental = "incremental"
 	SyncModeFull        = "full"
+	// SyncModeManual stores a reusable connection without a sync subscription.
+	SyncModeManual = "manual"
 
 	// Data source status
 	DataSourceStatusActive  = "active"

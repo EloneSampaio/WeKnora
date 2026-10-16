@@ -438,3 +438,13 @@ registry.Register(gitlabConnector.NewConnector())                   // gitlab
 - HTTP 接口层：`internal/handler/datasource.go`、`internal/handler/datasource_credentials.go`
 - 业务服务层：`internal/application/service/datasource_service.go`
 - 数据模型：`internal/types/datasource.go`
+
+### Paperless 手动单次导入
+
+在文档知识库中选择 **添加文档 → 从 Paperless 导入**。管理员可以复用该知识库已有的 Paperless 连接，或保存一个新的手动连接；凭据仍由服务端的 DataSource 凭据存储管理，不返回浏览器。手动连接的 `sync_mode` 为 `manual`，不能设置同步计划、持久资源选择或筛选规则，也不能启动同步。
+
+选择连接后，实时搜索 Paperless 文档并按标签、文档类型和通讯者筛选。多个标签表示同时包含全部标签（AND）。勾选一个或多个文档，可选择本页、清空或跨页保留选择；筛选和选择仅在本次弹窗会话有效，关闭后清空。单批最多导入 100 个文档。
+
+点击导入只下载选中文档的**原始文件**，进入 WeKnora 现有文件上传、解析、分块和向量索引流程，并沿用上传大小限制、格式检查、配额和内容哈希去重。结果列表报告已提交解析的知识 ID、重复或各文档错误；后续处理状态显示在知识库现有文档列表中。导入的来源 metadata 包含 Paperless 文档 ID、连接 ID、来源地址和原文件名；相同内容采用现有文件去重规则。
+
+此方式不会订阅筛选结果，也不会自动纳入未来匹配文档、更新已导入原件或同步源删除。它无需 MinerU、Document Assets 或外部解析器。已有 Paperless 持续同步保持原有行为；从已有同步连接单次导入不会修改其订阅配置。

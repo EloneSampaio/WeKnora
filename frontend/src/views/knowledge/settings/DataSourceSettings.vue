@@ -198,12 +198,12 @@ onBeforeUnmount(stopPolling)
 
       <div v-else-if="!loading" class="ds-grid">
         <component
-          :is="canManageDataSource ? 'button' : 'div'"
+          :is="canManageDataSource && ds.sync_mode !== 'manual' ? 'button' : 'div'"
           v-for="ds in dataSources"
           :key="ds.id"
-          :type="canManageDataSource ? 'button' : undefined"
-          :class="['ds-card', `ds-card--${ds.type}`, { 'ds-card--clickable': canManageDataSource }]"
-          @click="canManageDataSource ? openEdit(ds) : undefined"
+          :type="canManageDataSource && ds.sync_mode !== 'manual' ? 'button' : undefined"
+          :class="['ds-card', `ds-card--${ds.type}`, { 'ds-card--clickable': canManageDataSource && ds.sync_mode !== 'manual' }]"
+          @click="canManageDataSource && ds.sync_mode !== 'manual' ? openEdit(ds) : undefined"
         >
           <div class="ds-card__badge">
             <DataSourceTypeIcon :type="ds.type" variant="badge" />
@@ -224,28 +224,28 @@ onBeforeUnmount(stopPolling)
                   </t-button>
                   <template #dropdown>
                     <t-dropdown-menu>
-                      <t-dropdown-item v-if="canManageDataSource" @click="openEdit(ds)">
+                      <t-dropdown-item v-if="canManageDataSource && ds.sync_mode !== 'manual'" @click="openEdit(ds)">
                         <t-icon name="edit" /> {{ t('datasource.edit') }}
                       </t-dropdown-item>
                       <t-dropdown-item
-                        v-if="canManageDataSource"
+                        v-if="canManageDataSource && ds.sync_mode !== 'manual'"
                         :disabled="isSyncRunning(ds)"
                         @click="handleSync(ds)"
                       >
                         <t-icon name="refresh" :class="{ 'ds-icon-spin': isSyncRunning(ds) }" />
                         {{ isSyncRunning(ds) ? t('datasource.logStatus.running') : t('datasource.syncNow') }}
                       </t-dropdown-item>
-                      <t-dropdown-item @click="openLogs(ds)">
+                      <t-dropdown-item v-if="ds.sync_mode !== 'manual'" @click="openLogs(ds)">
                         <t-icon name="root-list" /> {{ t('datasource.logs') }}
                       </t-dropdown-item>
                       <t-dropdown-item
-                        v-if="canManageDataSource && ds.status === 'active'"
+                        v-if="canManageDataSource && ds.sync_mode !== 'manual' && ds.status === 'active'"
                         @click="handlePause(ds)"
                       >
                         <t-icon name="pause-circle" /> {{ t('datasource.pause') }}
                       </t-dropdown-item>
                       <t-dropdown-item
-                        v-else-if="canManageDataSource && ds.status === 'paused'"
+                        v-else-if="canManageDataSource && ds.sync_mode !== 'manual' && ds.status === 'paused'"
                         @click="handleResume(ds)"
                       >
                         <t-icon name="play-circle" /> {{ t('datasource.resume') }}
